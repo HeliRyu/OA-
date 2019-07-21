@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--//角色管理，对系统角色的增删改查功能，权限关联进角色-->
+<mapper namespace="com.bypx.dao.RoleDao">
+    <!--//根据角色名关键词，模糊查询出已有的角色信息-->
+    <!--//创建表格查询-->
+    <!--//添加查询条件,添加分页-->
+    <select id="query" parameterType="RolePage" resultMap="roleResultMap">
+        select * from ( select t.*,rownum as rn from (
+        select id_,name_,flag_ from firstsystem_role
+          <include refid="commonWhere"></include> order by id_
+         )t)t2
+        where t2.rn between #{start_index} and #{end_index}
+    </select>
+    <sql id="commonWhere">
+        <where>
+            <if test="@com.bypx.dao.QueryUtil@strIsNotEmpty(name)">
+              and name_=#{name}
+            </if>
+        </where>
+    </sql>
+    <resultMap id="roleResultMap" type="RolePage">
+     <id column="id_" property="id"></id>
+     <result column="name_" property="name"></result>
+     <result column="flag_" property="flag"></result>
+    </resultMap>
+    <!--//查询总记录数-->
+    <select id="total" parameterType="RolePage" resultType="Integer">
+        select count(*) from firstsystem_role
+        <include refid="commonWhere"></include>
+    </select>
+    <!--//获取数据创建权限树-->
+    <select id="gettree" parameterType="RolePage" resultMap="roleResultMap2">
+        select id_,name_,flag_ from firstsystem_permission
+    </select>
+    <resultMap id="roleResultMap2" type="RolePage">
+        <id column="id_" property="id"></id>
+        <result column="name_" property="name"></result>
+        <result column="flag_" property="flag"></result>
+    </resultMap>
+    <!--//点击新增，界面包含所有权限信息，输入角色名、角色标识，可多选权限-->
+    <!--//新增到角色表-->
+    <insert id="add1" parameterType="RolePage">
+        insert into firstsystem_role (id_,name_,flag_) values(#{role_id},#{name},#{flag})
+    </insert>
+    <!--//新增到角色权限关联表-->
+    <insert id="add2" parameterType="RolePage">
+        insert into firstsystem_permission_role (id_,role_id_,per_id_) values (#{rp_id},#{role_id},#{per_id_})
+    </insert>
+    <!--//为了编辑获取数据-->
+    <!--//获取角色表数据-->
+    <select id="getdata1" parameterType="RolePage" resultMap="roleResultMap3">
+        select id_,name_,flag_ from firstsystem_role where id_=#{id}
+    </select>
+    <resultMap id="roleResultMap3" type="RolePage">
+        <id column="id_" property="id"></id>
+        <result column="name_" property="name"></result>
+        <result column="flag_" property="flag"></result>
+    </resultMap>
+    <!--//获取角色权限表数据-->
+    <select id="getdata2" parameterType="RolePage" resultMap="roleResultMap4">
+        select per_id_ from firstsystem_permission_role where role_id_=#{id}
+    </select>
+    <resultMap id="roleResultMap4" type="RolePage">
+        <id column="id_" property="id"></id>
+        <result column="name_" property="name"></result>
+        <result column="flag_" property="flag"></result>
+    </resultMap>
+    <!--//点击 编辑 按钮，界面展示出 所选数据的名与标识，并勾选已有的权限-->
+    <!--//勾选多条时，提示“只能编辑一条数据”-->
+    <!--//编辑-->
+    <!--//在角色表里更新角色-->
+    <update id="edit" parameterType="RolePage">
+        update firstsystem_role set name_=#{name}, flag_=#{flag} where id_=#{id}
+    </update>
+    <!--//在角色权限表删除原来的权限-->
+    <delete id="del" parameterType="String">
+        delete from firstsystem_permission_role where role_id_=#{id}
+    </delete>
+    <!--//在角色权限表添加新的权限-->
+    <insert id="add3" parameterType="RolePage">
+        insert into firstsystem_permission_role (id_,role_id_,per_id_) values(#{rp_id},#{id},#{per_id_})
+    </insert>
+    <!--//删除勾选的数据，并删除关联表数据-->
+    <delete id="del2" parameterType="String">
+        delete from firstsystem_role where id_=#{id}
+    </delete>
+</mapper>

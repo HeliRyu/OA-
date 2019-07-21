@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+    xmlns:aop="http://www.springframework.org/schema/aop" xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.0.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop-4.0.xsd">
+
+    <!--创建一个sql会话工厂bean，指定数据源-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <!-- 1指定数据源 -->
+        <property name="dataSource" ref="dataSource" />
+        <!-- 2类型别名包，默认引入com.bypx.bean下的所有类
+          	它一般对应我们的实体类所在的包，这个时候会自动取对应包
+          	中不包括包名的简单类名作为包括包名的别名。
+          	多个package之间可以用逗号或者分号等来进行分隔。
+        -->
+        <property name="typeAliasesPackage" value="com.bypx.page"></property>
+        <!-- 3指定sql映射xml文件的路径 
+        mapperLocations：它表示我们的Mapper文件存放的位置，
+        当我们的Mapper文件跟对应的Mapper接口处于同一位置的时候可以不用指定该属性的值。
+        -->
+        <property name="mapperLocations" value="classpath:com/bypx/dao/**.xml"></property>
+        <!-- 4配置mybatis的日志记录 -->
+        <property name="configLocation" value="classpath:mybatis-config.xml"></property>
+    </bean>
+
+	<!-- 配置SqlSessionTemplate -->  
+    <bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">  
+        <constructor-arg name="sqlSessionFactory" ref="sqlSessionFactory" />  
+    </bean>  
+
+     <!-- 配置mybatis mapper接口 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.bypx.dao"/>
+        <property name="sqlSessionTemplateBeanName" value="sqlSessionTemplate"/>
+    </bean>
+   
+</beans>

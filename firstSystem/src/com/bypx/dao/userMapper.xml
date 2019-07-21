@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--//用户管理，对系统用户的增删改查功能-->
+<!--//列表头像要显示出来，-->
+<!--//当角色包含经理时，名字要红色显示-->
+<!--//列表字段角色、组织名通过左联查询出来-->
+<mapper namespace="com.bypx.dao.UserDao">
+    <!--//创建表格查询，查询条件：姓名及生日，查出对应的数据，注意控制好分页-->
+    <!--//添加查询条件,添加分页-->
+    <select id="query" parameterType="UserPage" resultMap="userResultMap">
+        select * from ( select t.*,rownum as rn from (
+        select id_,account_,name_,password_,email_,to_char(birthday_,'yyyy-MM-dd HH:mm:ss')as birthday_,remark_,photo_ from firstsystem_user
+        <include refid="commonWhere"></include> order by id_
+        )t)t2
+        where t2.rn between #{start_index} and #{end_index}
+    </select>
+    <sql id="commonWhere">
+        <where>
+            <if test="@com.bypx.dao.QueryUtil@strIsNotEmpty(name)">
+                and name_=#{name}
+            </if>
+        </where>
+    </sql>
+    <resultMap id="userResultMap" type="UserPage">
+        <id column="id_" property="id"></id>
+        <result column="account_" property="account"></result>
+        <result column="name_" property="name"></result>
+        <result column="password_" property="pass"></result>
+        <result column="email_" property="email"></result>
+        <result column="birthday_" property="birth"></result>
+        <result column="remark_" property="remark"></result>
+        <result column="photo_" property="photo"></result>
+    </resultMap>
+    <!--//查询总记录数-->
+    <select id="total" parameterType="UserPage" resultType="Integer">
+        select count(*) from firstsystem_user
+        <include refid="commonWhere"></include>
+    </select>
+    <!--//左联角色表和角色用户关联表，查询某用户对应的角色名-->
+    <select id="getRole" parameterType="String" resultMap="roleResultMap">
+        select t2.name_,t2.id_,t2.flag_ from firstsystem_role_user t1 left join
+        firstsystem_role t2 on t1.role_id_=t2.id_ where t1.user_id_=#{uid}
+    </select>
+    <resultMap id="roleResultMap" type="RolePage">
+        <id column="id_" property="id"></id>
+        <result column="name_" property="name"></result>
+        <result column="flag_" property="flag"></result>
+    </resultMap>
+    <!--//左联组织表和组织用户关联表，查询某用户对应的组织名-->
+    <select id="getDepart" parameterType="String" resultMap="departResultMap">
+        select t2.name_,t2.id_,t2.flag_ from firstsystem_department_user t1 left join
+        firstsystem_department t2 on t1.department_id_=t2.id_ where t1.user_id_=#{uid}
+    </select>
+    <resultMap id="departResultMap" type="DepartmentPage">
+        <id column="id_" property="id"></id>
+        <result column="name_" property="name"></result>
+        <result column="flag_" property="flag"></result>
+    </resultMap>
+    <!--//获取数据创建角色树-->
+    <select id="getRtree" parameterType="UserPage" resultMap="rTreeResultMap">
+        select id_,name_,flag_ from firstsystem_role
+    </select>
+    <resultMap id="rTreeResultMap" type="Rolepage">
+        <id column="id_" property="id"></id>
+        <result column="name_" property="name"></result>
+        <result column="flag_" property="flag"></result>
+    </resultMap>
+    <!--//获取数据创建组织机构树-->
+    <select id="getDtree" parameterType="UserPage" resultMap="dTreeResultMap">
+        select id_,name_,flag_,parent_id_ from firstsystem_department
+    </select>
+    <resultMap id="dTreeResultMap" type="Departmentpage">
+        <id column="id_" property="id"></id>
+        <result column="name_" property="name"></result>
+        <result column="flag_" property="flag"></result>
+        <result column="parent_id_" property="parentid"></result>
+    </resultMap>
+    <!--//点击新增按钮，弹出框中包含用户信息、以及角色、组织机构名-->
+    <!--//查询该用户的账号是否已存在-->
+    <select id="whereAcc" parameterType="UserPage" resultType="Long">
+        select count(*) from firstsystem_user
+        <include refid="commonWhere2"></include>
+    </select>
+    <sql id="commonWhere2">
+        <where>
+            <if test="@com.bypx.dao.QueryUtil@strIsNotEmpty(account)">
+                and account_=#{account}
+            </if>
+            <if test="@com.bypx.dao.QueryUtil@strIsNotEmpty(pass)">
+                and password_=#{pass}
+            </if>
+        </where>
+    </sql>
+    <!--//新增到用户表-->
+    <insert id="user_add" parameterType="UserPage">
+        insert into firstsystem_user(id_,account_,name_,birthday_,password_,email_,remark_,photo_)
+        values(#{id},#{account},#{name},to_date(#{birth},'yyyy-MM-dd'),#{pass},#{email},#{remark},#{photo})
+    </insert>
+    <!--//新增到角色用户关联表-->
+    <insert id="user_add2" parameterType="UserPage">
+        insert into firstsystem_role_user (id_,user_id_,role_id_) values (#{id},#{user_id},#{r_id})
+    </insert>
+    <!--//新增到组织用户关联表-->
+    <insert id="user_add3" parameterType="UserPage">
+        insert into firstsystem_department_user (id_,user_id_,department_id_) values (#{id},#{user_id},#{d_id})
+    </insert>
+    <!--//为了编辑获取数据-->
+    <!--//获取用户表数据-->
+    <select id="getdata1" parameterType="UserPage" resultMap="userResultMap1">
+        select account_,name_,password_,email_,to_char(birthday_,'yyyy-MM-dd HH:mm:ss')as birthday_,remark_,photo_ from firstsystem_user where id_=#{id}
+    </select>
+    <resultMap id="userResultMap1" type="UserPage">
+        <id column="id_" property="id"></id>
+        <result column="account_" property="account"></result>
+        <result column="name_" property="name"></result>
+        <result column="password_" property="pass"></result>
+        <result column="email_" property="email"></result>
+        <result column="birthday_" property="birth"></result>
+        <result column="remark_" property="remark"></result>
+        <result column="photo_" property="photo"></result>
+    </resultMap>
+    <!--//在角色用户关联表获取角色数据-->
+    <select id="getdata2" parameterType="UserPage" resultMap="userResultMap2">
+        select role_id_ from firstsystem_role_user where user_id_=#{id}
+    </select>
+    <resultMap id="userResultMap2" type="UserPage">
+        <id column="id_" property="id"></id>
+        <result column="account_" property="account"></result>
+        <result column="name_" property="name"></result>
+        <result column="password_" property="pass"></result>
+        <result column="email_" property="email"></result>
+        <result column="birthday_" property="birth"></result>
+        <result column="remark_" property="remark"></result>
+        <result column="photo_" property="photo"></result>
+    </resultMap>
+    <!--//在组织用户关联表获取组织数据-->
+    <select id="getdata3" parameterType="UserPage" resultMap="userResultMap3">
+        select department_id_ from firstsystem_department_user where user_id_=#{id}
+    </select>
+    <resultMap id="userResultMap3" type="UserPage">
+        <id column="id_" property="id"></id>
+        <result column="account_" property="account"></result>
+        <result column="name_" property="name"></result>
+        <result column="password_" property="pass"></result>
+        <result column="email_" property="email"></result>
+        <result column="birthday_" property="birth"></result>
+        <result column="remark_" property="remark"></result>
+        <result column="photo_" property="photo"></result>
+    </resultMap>
+    <!--//勾选数据，点击编辑按钮 ，弹出框中初始化对应信息，可以任意修改用户数据-->
+    <!--//勾选多条时，提示“只能编辑一条数据”-->
+    <!--//编辑-->
+    <!--//在用户表更新用户-->
+    <update id="edit" parameterType="UserPage">
+        update firstsystem_user set account_=#{account},name_=#{name},password_=#{pass},email_=#{email},
+        birthday_=to_date(#{birth},'yyyy-MM-dd HH:mi:ss'),remark_=#{remark},photo_=#{photo} where id_=#{id}
+    </update>
+    <!--//在角色用户关联表删除原角色-->
+    <delete id="user_del_role" parameterType="String">
+        delete from firstsystem_role_user where user_id_=#{id}
+    </delete>
+    <!--//在角色用户关联表添加新角色-->
+    <insert id="user_edit_role" parameterType="UserPage">
+        insert into firstsystem_role_user (id_,user_id_,role_id_) values(#{urid},#{id},#{rrid})
+    </insert>
+    <!--//在组织用户关联表删除原组织-->
+    <delete id="user_del_department" parameterType="String">
+        delete from firstsystem_department_user where user_id_=#{id}
+    </delete>
+    <!--//在组织用户关联表添加新组织-->
+    <insert id="user_edit_department" parameterType="UserPage">
+        insert into firstsystem_department_user (id_,user_id_,department_id_) values(#{udid},#{id},#{ddid})
+    </insert>
+    <!--//删除勾选的数据，并删除关联表数据-->
+    <delete id="user_del" parameterType="String">
+        delete from firstsystem_user where id_=#{id}
+    </delete>
+</mapper>

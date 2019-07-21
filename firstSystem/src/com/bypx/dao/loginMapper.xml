@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--//登录注册-->
+<mapper namespace="com.bypx.dao.LoginDao">
+    <!--//勾选框选中后，使用cookie加密保存登录成功后的用户名、密码。再次打开登录页，直接从cookie中解密。-->
+    <!--// （如果一周内免登陆复选框在提交数据时有选中，则跳转前将用户信息存入Cookie，下一次打开登陆页的时候不需要提交用户名密码直接到成功页面。）-->
+    <!--//登录和记住密码，发送用户名和密码到后台进行验证-->
+    <select id="login" parameterType="LoginPage" resultType="Long">
+        select count(*) from firstsystem_user
+        <include refid="commonWhere"></include>
+    </select>
+    <!--//查询账户是否存在-->
+    <select id="register" parameterType="LoginPage" resultType="Long">
+        select count(*) from firstsystem_user
+        <include refid="commonWhere"></include>
+    </select>
+    <sql id="commonWhere">
+        <where>
+            <if test="@com.bypx.dao.QueryUtil@strIsNotEmpty(laccount)">
+                and account_=#{laccount}
+            </if>
+            <if test="@com.bypx.dao.QueryUtil@strIsNotEmpty(lpassword)">
+                and password_=#{lpassword}
+            </if>
+        </where>
+    </sql>
+    <!--//注册新增-->
+    <insert id="register_add" parameterType="LoginPage">
+        insert into firstsystem_user(id_,account_,name_,birthday_,password_,email_,remark_,photo_)
+        values(cc.nextval,#{laccount},#{lname},to_date(#{lbirthday},'yyyy-MM-dd'),#{lpassword},#{lemail},#{lremark},#{lphoto})
+    </insert>
+</mapper>

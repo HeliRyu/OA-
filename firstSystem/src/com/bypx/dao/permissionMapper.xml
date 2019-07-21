@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--//权限管理，管理系统的权限，权限与角色关联-->
+<mapper namespace="com.bypx.dao.PermissionDao">
+    <!--//查询，输入框里输入 权限名 关键词，直接查出相关的权限数据-->
+    <!--//添加查询条件,添加分页-->
+    <select id="query" parameterType="PermissionPage" resultMap="perResultMap">
+        select * from ( select t.*,rownum as rn from (
+        select id_,name_,flag_ from firstsystem_permission
+        <include refid="commonWhere"></include> order by id_
+        )t)t2
+        where t2.rn between #{start_index} and #{end_index}
+    </select>
+    <sql id="commonWhere">
+        <where>
+            <if test="@com.bypx.dao.QueryUtil@strIsNotEmpty(name)">
+                and name_=#{name}
+            </if>
+        </where>
+    </sql>
+    <resultMap id="perResultMap" type="PermissionPage">
+        <id column="id_" property="id"></id>
+        <result column="name_" property="name"></result>
+        <result column="flag_" property="flag"></result>
+    </resultMap>
+    <!--//查询总记录数-->
+    <select id="total" parameterType="PermissionPage" resultType="Integer">
+        select count(*) from firstsystem_permission
+        <include refid="commonWhere"></include>
+    </select>
+    <!--//点击 新增 按钮，弹出框 输入权限名，以及权限值-->
+    <insert id="add" parameterType="PermissionPage">
+        insert into firstsystem_permission (id_,name_,flag_) values(cc.nextval,#{name},#{flag})
+    </insert>
+    <!--//为了编辑获取数据-->
+    <select id="getdata" parameterType="PermissionPage" resultMap="perResultMap2">
+        select id_,name_,flag_ from firstsystem_permission where id_=#{id}
+    </select>
+    <resultMap id="perResultMap2" type="PermissionPage">
+        <id column="id_" property="id"></id>
+        <result column="name_" property="name"></result>
+        <result column="flag_" property="flag"></result>
+    </resultMap>
+    <!--//编辑-->
+    <!--//勾选 一条数据 点击编辑，弹出框允许修改名与值-->
+    <!--//勾选 多条数据，点击编辑，则提示 “只能修改一条”-->
+    <update id="edit" parameterType="PermissionPage">
+        update firstsystem_permission set name_=#{name}, flag_=#{flag} where id_=#{id}
+    </update>
+    <!--//删除，直接删除勾选的数据，并同时删除关联表数据-->
+    <delete id="del" parameterType="String">
+        delete from firstsystem_permission where id_=#{id}
+    </delete>
+</mapper>

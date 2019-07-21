@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--//组织管理-->
+<mapper namespace="com.bypx.dao.DepartmentDao">
+    <!--//获取数据建成树-->
+    <!--//树形结构表示当前的组织关系，右键任意一个节点，弹出编辑、添加下级、删除的相关操作-->
+    <select id="getdata" parameterType="DepartmentPage" resultMap="departResultMap">
+        select name_,id_,parent_id_ from firstsystem_department
+    </select>
+    <resultMap id="departResultMap" type="DepartmentPage">
+        <id column="id_" property="id"></id>
+        <result column="name_" property="name"></result>
+        <result column="parent_id_" property="parentid"></result>
+    </resultMap>
+    <!--//点击编辑按钮 弹出框只能修改组织名称-->
+    <update id="edit" parameterType="DepartmentPage">
+        update firstsystem_department set name_=#{name} where id_=#{id}
+    </update>
+    <!--//点击 添加下级 按钮，弹出框 输入新的组织名，完成后，自动刷新组织树-->
+    <insert id="add" parameterType="DepartmentPage">
+        insert into firstsystem_department (id_,name_,parent_id_) values(cc.nextval,#{name},#{parentid})
+    </insert>
+    <!--//移除-->
+    <!--//1）点击 移除 按钮，弹出确认框，确认后删除下级组织，并刷新组织树-->
+    <!--//2）若该组织为根节点，不允许删除-->
+    <!--//3）若该组织已关联用户，不允许删除（在组织用户关系表设立外键）：（设立了用户外键，删除用户，组织用户关系表里也删除）-->
+    <!--//4）若有下级，则同时删除下级组织（在组织表里设立外键）-->
+    <delete id="del" parameterType="String">
+        delete from firstsystem_department where id_=#{id}
+    </delete>
+</mapper>
